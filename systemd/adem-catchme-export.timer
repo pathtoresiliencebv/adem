@@ -1,0 +1,10 @@
+[Unit]
+Description=Refresh Adem process metrics for local CatchMe
+
+[Timer]
+OnBootSec=20s
+OnUnitActiveSec=15s
+Persistent=false
+
+[Install]
+WantedBy=timers.target

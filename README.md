@@ -14,6 +14,7 @@ It is designed for everyday Linux users who want a calmer way to reclaim attenti
 - No file deletion, cache deletion, sudo, cloud account or external connection.
 - Loopback-only web server with Origin and session-token checks for mutations.
 - Responsive English interface with keyboard support and reduced-motion handling.
+- Optional CatchMe integration exports a bounded, read-only expensive-process snapshot to `~/.catchme/integrations/adem-processes.json`.
 
 ## Requirements
 
@@ -38,6 +39,10 @@ python3 server.py
 ```
 
 To install on another Linux computer, copy this repository or release archive there and run `bash install.sh`. Each computer has its own local dashboard; there is no central control.
+
+### CatchMe integration
+
+When CatchMe is installed locally, the installer enables a per-user timer that refreshes a small snapshot every 15 seconds. A CatchMe adapter or local agent can read that file as context to answer which process groups are resource-heavy. It contains only app labels, CPU/RAM estimates, counts, protection status and a timestamp. It never contains screen images, window titles, URLs, command lines, paths or file contents. The export has no actions; CatchMe cannot close processes through it. If CatchMe is not installed, the timer stays disabled.
 
 ## Closing apps safely
 

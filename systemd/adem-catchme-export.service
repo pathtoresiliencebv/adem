@@ -1,0 +1,9 @@
+[Unit]
+Description=Export bounded Adem process metrics for local CatchMe recall
+After=adem-optimizer.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 %h/.local/share/adem-optimizer/scripts/catchme_export.py
+NoNewPrivileges=true
+UMask=0077

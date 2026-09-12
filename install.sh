@@ -2,10 +2,12 @@
 set -euo pipefail
 app_source="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 app_target="$HOME/.local/share/adem-optimizer"
-mkdir -p "$app_target/web" "$HOME/.local/bin" "$HOME/.local/share/applications" "$HOME/.config/systemd/user"
+mkdir -p "$app_target/web" "$app_target/scripts" "$app_target/systemd" "$HOME/.local/bin" "$HOME/.local/share/applications" "$HOME/.config/systemd/user"
 if [[ "$app_source" != "$app_target" ]]; then
     cp "$app_source/server.py" "$app_target/server.py"
     cp "$app_source/web/index.html" "$app_source/web/style.css" "$app_source/web/app.js" "$app_source/web/icon.svg" "$app_target/web/"
+    cp "$app_source/scripts/catchme_export.py" "$app_target/scripts/"
+    cp "$app_source/systemd/adem-catchme-export.service" "$app_source/systemd/adem-catchme-export.timer" "$app_target/systemd/"
 fi
 python3 - "$app_target" <<'PY'
 from pathlib import Path
@@ -28,6 +30,8 @@ UMask=0077
 WantedBy=default.target
 '''
 (home / '.config/systemd/user/adem-optimizer.service').write_text(service)
+(home / '.config/systemd/user/adem-catchme-export.service').write_text((target / 'systemd/adem-catchme-export.service').read_text().replace('%h', str(home)))
+(home / '.config/systemd/user/adem-catchme-export.timer').write_text((target / 'systemd/adem-catchme-export.timer').read_text())
 launcher = home / '.local/bin/adem-optimizer'
 launcher.write_text('''#!/usr/bin/env bash
 set -euo pipefail
@@ -65,4 +69,7 @@ PY
 systemctl --user daemon-reload
 systemctl --user enable adem-optimizer.service
 systemctl --user restart adem-optimizer.service
+if systemctl --user is-active --quiet catchme-web.service || [[ -d "$HOME/.catchme" ]]; then
+    systemctl --user enable --now adem-catchme-export.timer
+fi
 printf '%s\n' 'Adem installed: http://127.0.0.1:8765' 'Open from the application menu: Adem — Linux optimizer'
