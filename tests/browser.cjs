@@ -36,7 +36,7 @@ const { spawn } = require('node:child_process');
     await page.locator('#search').fill('no-such-app-12345');
     check('Empty search state shown', await page.locator('#empty').isVisible());
     await page.locator('#search').fill('VLC');
-    await page.getByRole('button', { name: 'Selecteer sluitbare apps', exact: true }).click();
+    await page.getByRole('button', { name: 'Select closable apps', exact: true }).click();
     check('Only test app selected', (await page.locator('#selection-count').innerText()).startsWith('1 app'));
     await page.locator('#review').focus(); await page.keyboard.press('Enter');
     await page.locator('#confirm-dialog[open]').waitFor();
