@@ -15,7 +15,7 @@ import sys
 home = Path.home()
 target = Path(sys.argv[1])
 service = f'''[Unit]
-Description=Adem lokale Linux optimizer
+Description=Adem local Linux optimizer
 After=graphical-session.target
 
 [Service]

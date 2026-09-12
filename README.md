@@ -2,6 +2,8 @@
 
 Adem is a local, open-source Linux process dashboard. It shows live CPU, RAM, swap, storage and per-user process data, then lets you close selected, recognised desktop apps after an explicit review.
 
+Adem is inspired by [GCleaner Python](https://github.com/gcleaner/gcleaner-python), which describes itself as a fast Ubuntu/Fedora system cleaner written with Python, GTK and GLib/GIO. Adem keeps that review-first cleaner idea, then extends it with a local web dashboard, process identity revalidation, protected sessions, CatchMe context and a no-sudo-by-default safety model. GCleaner Python is a separate GPL-3.0 project; Adem does not copy its source code.
+
 It is designed for everyday Linux users who want a calmer way to reclaim attention and memory without a cleaner that deletes files behind their back.
 
 ## Features

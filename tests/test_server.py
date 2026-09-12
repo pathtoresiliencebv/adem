@@ -137,6 +137,15 @@ class HttpTests(unittest.TestCase):
             self.assertEqual(status, 200)
             self.assertIn("frame-ancestors 'none'", headers['Content-Security-Policy'])
 
+    def test_package_inventory_is_read_only_and_uninstall_is_allowlisted(self):
+        status, _, body = self.request('/api/packages')
+        payload = json.loads(body)
+        self.assertEqual(status, 200)
+        self.assertIn('packages', payload)
+        headers = {'Origin': f'http://{self.host}', 'X-Optimizer-Token': self.http.token}
+        self.assertEqual(self.request('/api/uninstall', 'POST', {'id': '/etc/passwd', 'confirmed': True}, headers)[0], 400)
+        self.assertEqual(self.request('/api/uninstall', 'POST', {'id': 'com.example.NotInstalled', 'confirmed': True}, headers)[0], 400)
+
 
 if __name__ == '__main__':
     unittest.main()

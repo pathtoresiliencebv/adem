@@ -9,6 +9,7 @@ import secrets
 import shutil
 import signal
 import socket
+import subprocess
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -197,6 +198,33 @@ class Plans:
         return {'results': results}
 
 
+def package_candidates():
+    """Read user-level Flatpak packages without changing the system."""
+    packages = []
+    try:
+        output = subprocess.run(['flatpak', 'list', '--user', '--app', '--columns=application,name,version'], capture_output=True, text=True, timeout=8, check=False)
+        if output.returncode == 0:
+            for line in output.stdout.splitlines():
+                parts = line.split('\t')
+                if len(parts) >= 2 and parts[0].startswith(('com.', 'org.', 'net.', 'io.')):
+                    packages.append({'id': parts[0][:160], 'name': parts[1][:120], 'version': parts[2][:80] if len(parts) > 2 else '', 'manager': 'flatpak-user', 'removable': True, 'note': 'User install; removal also deletes Flatpak app data after confirmation.'})
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+    return {'packages': packages, 'managers': {'flatpakUser': bool(packages), 'systemPackageRemoval': False}, 'note': 'Only user-level Flatpak apps are removable here. System packages require a distro-specific administrator flow outside Adem.'}
+
+
+def uninstall_package(package_id):
+    if not isinstance(package_id, str) or len(package_id) > 160 or not package_id.startswith(('com.', 'org.', 'net.', 'io.')) or any(ch not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-' for ch in package_id):
+        raise ValueError('Only a valid user-level Flatpak application ID can be removed.')
+    available = package_candidates()['packages']
+    if not any(p['id'] == package_id and p['removable'] for p in available):
+        raise ValueError('This Flatpak is not currently installed for your user. Refresh the package list.')
+    result = subprocess.run(['flatpak', 'uninstall', '--user', '--delete-data', '--noninteractive', '--', package_id], capture_output=True, text=True, timeout=120, check=False)
+    if result.returncode != 0:
+        raise OSError((result.stderr or result.stdout or 'Flatpak removal failed.')[-500:])
+    return {'status': 'removed', 'id': package_id, 'dataDeleted': True, 'output': (result.stdout or '')[-500:]}
+
+
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         pass  # No request bodies, tokens or process details in logs.
@@ -221,40 +249,44 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if not self.valid_host() or self.headers.get('Sec-Fetch-Site') == 'cross-site':
-            return self.respond(403, {'error': 'Alleen lokale toegang toegestaan.'})
+            return self.respond(403, {'error': 'Local access only.'})
         if self.path == '/api/state':
             return self.respond(200, {**self.server.monitor.snapshot(), 'token': self.server.token})
+        if self.path == '/api/packages':
+            return self.respond(200, self.server.package_candidates())
         files = {'/': ('index.html', 'text/html; charset=utf-8'),
                  '/app.js': ('app.js', 'text/javascript; charset=utf-8'),
                  '/style.css': ('style.css', 'text/css; charset=utf-8'),
                  '/icon.svg': ('icon.svg', 'image/svg+xml')}
         if self.path not in files:
-            return self.respond(404, {'error': 'Niet gevonden.'})
+            return self.respond(404, {'error': 'Not found.'})
         name, mime = files[self.path]
         self.respond(200, (ROOT / 'web' / name).read_bytes(), mime)
 
     def do_POST(self):
         origin = self.headers.get('Origin')
         if not self.valid_host() or origin != f'http://{self.headers.get("Host")}' or not secrets.compare_digest(self.headers.get('X-Optimizer-Token', ''), self.server.token):
-            return self.respond(403, {'error': 'Ongeldige lokale sessie. Herlaad de pagina.'})
+            return self.respond(403, {'error': 'Invalid local session. Reload the page.'})
         try:
             length = int(self.headers.get('Content-Length', '0'))
             if length < 1 or length > 16384:
-                raise ValueError('Ongeldige aanvraaggrootte.')
+                raise ValueError('Invalid request size.')
             data = json.loads(self.rfile.read(length))
             if not isinstance(data, dict):
-                raise ValueError('Ongeldige aanvraag.')
+                raise ValueError('Invalid request.')
             if self.path == '/api/plan':
                 result = self.server.plans.create(data.get('apps'))
+            elif self.path == '/api/uninstall' and data.get('confirmed') is True:
+                result = self.server.uninstall_package(data.get('id'))
             elif self.path == '/api/close' and data.get('confirmed') is True:
                 result = self.server.plans.execute(data.get('plan'))
             else:
-                raise ValueError('Onbekende actie of bevestiging ontbreekt.')
+                raise ValueError('Unknown action or confirmation missing.')
             self.respond(200, result)
         except (ValueError, TypeError, KeyError) as exc:
             self.respond(400, {'error': str(exc)})
         except OSError:
-            self.respond(500, {'error': 'Linux kon de actie niet uitvoeren. Vernieuw de pagina.'})
+            self.respond(500, {'error': 'Linux could not complete the action. Refresh the page.'})
 
     def setup(self):
         super().setup()
@@ -266,15 +298,17 @@ def make_server(port=8765):
     server.token = secrets.token_urlsafe(32)
     server.monitor = Monitor()
     server.plans = Plans()
+    server.package_candidates = package_candidates
+    server.uninstall_package = uninstall_package
     return server
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Adem — lokale Linux optimizer')
+    parser = argparse.ArgumentParser(description='Adem — local Linux optimizer')
     parser.add_argument('--port', type=int, default=8765)
     args = parser.parse_args()
     server = make_server(args.port)
-    print(f'Adem luistert op http://127.0.0.1:{server.server_port}', flush=True)
+    print(f'Adem listening on http://127.0.0.1:{server.server_port}', flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

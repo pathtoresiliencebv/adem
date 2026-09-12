@@ -1,6 +1,7 @@
 'use strict';
 const $ = (id) => document.getElementById(id);
 let state = null, token = '', activePlan = null, busy = false, fetching = false, online = false, planTimer;
+let packages = [], packageTarget = null;
 const selected = new Set(), rows = new Map();
 const bytes = (n) => n >= 1073741824 ? `${(n / 1073741824).toLocaleString('nl-NL', {maximumFractionDigits: 1})} GB` : `${(n / 1048576).toLocaleString('nl-NL', {maximumFractionDigits: 0})} MB`;
 const percent = (n) => `${n.toLocaleString('nl-NL', {maximumFractionDigits: 1})}%`;
@@ -95,12 +96,47 @@ async function refresh(manual = false) {
     if (manual) announce('Metingen en applijst bijgewerkt.');
   } catch (error) {
     online = false;
-    text('connection', '○ Verbinding verbroken');
-    text('error', 'De lokale service is niet bereikbaar. Getoonde metingen kunnen verouderd zijn. Start Adem opnieuw en kies Vernieuwen.');
+    text('connection', '○ Connection lost');
+    text('error', 'The local service is not reachable. Displayed measurements may be stale. Restart Adem and choose Refresh.');
     $('error').hidden = false;
     selectionSummary();
   } finally { fetching = false; $('refresh').disabled = false; }
 }
+async function refreshPackages() {
+  try {
+    const response = await fetch('/api/packages', {signal: AbortSignal.timeout(10000)});
+    if (!response.ok) throw new Error('Package manager lookup failed.');
+    const data = await response.json(); packages = data.packages || [];
+    text('package-note', data.note || ''); text('package-count', packages.length);
+    const list = $('package-list'); list.replaceChildren();
+    for (const pkg of packages) {
+      const item = document.createElement('li'); item.className = 'package-row';
+      const info = document.createElement('div');
+      const title = document.createElement('strong'); title.textContent = pkg.name; info.append(title);
+      const detail = document.createElement('span'); detail.textContent = `${pkg.id}${pkg.version ? ` · ${pkg.version}` : ''}`; info.append(detail);
+      const button = document.createElement('button'); button.className = 'danger'; button.textContent = 'Remove & delete data'; button.title = pkg.note;
+      button.addEventListener('click', () => openUninstall(pkg)); item.append(info, button); list.append(item);
+    }
+    $('packages-empty').hidden = packages.length > 0;
+  } catch (error) { text('package-note', error.message); $('packages-empty').hidden = false; }
+}
+function openUninstall(pkg) {
+  packageTarget = pkg; text('uninstall-target', `${pkg.name} (${pkg.id})`); text('uninstall-error', ''); $('uninstall-confirm').disabled = false; $('uninstall-dialog').showModal(); $('uninstall-cancel').focus();
+}
+$('packages-refresh').addEventListener('click', refreshPackages);
+$('uninstall-cancel').addEventListener('click', () => $('uninstall-dialog').close());
+$('uninstall-dialog').addEventListener('keydown', (event) => {
+  if (event.key !== 'Tab') return;
+  const controls = [...$('uninstall-dialog').querySelectorAll('button:not(:disabled)')]; const first = controls[0], last = controls[controls.length - 1];
+  if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); } else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+});
+$('uninstall-confirm').addEventListener('click', async () => {
+  if (!packageTarget || busy) return;
+  busy = true; $('uninstall-confirm').disabled = true;
+  try { await api('/api/uninstall', {id: packageTarget.id, confirmed: true}); $('uninstall-dialog').close(); announce(`${packageTarget.name} removed. Its Flatpak app data was deleted.`); await refreshPackages(); }
+  catch (error) { text('uninstall-error', `${error.message} No package change was confirmed by Adem.`); }
+  finally { busy = false; }
+});
 $('refresh').addEventListener('click', () => refresh(true));
 $('search').addEventListener('input', renderApps);
 $('filter').addEventListener('change', renderApps);
@@ -156,4 +192,5 @@ $('confirm').addEventListener('click', async () => {
   finally { busy = false; selectionSummary(); await refresh(); }
 });
 refresh();
+refreshPackages();
 setInterval(() => { if ($('auto-refresh').checked && !$('confirm-dialog').open && !document.hidden) refresh(); }, 4000);
