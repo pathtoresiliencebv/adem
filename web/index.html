@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="nl">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#143e35"><title>Adem — Linux optimizer</title><link rel="icon" href="/icon.svg"><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<aside class="sidebar">
+  <a class="brand" href="#overzicht"><img src="/icon.svg" width="42" height="42" alt=""><span>adem<span class="brand-sub">LINUX OPTIMIZER</span></span></a>
+  <div class="nav-label">WORKSPACE</div>
+  <nav aria-label="Main navigation"><a href="#overzicht"><span aria-hidden="true">▦</span> Overview</a><a href="#apps"><span aria-hidden="true">▤</span> Apps & processes</a><a href="#bescherming"><span aria-hidden="true">◇</span> Protection</a></nav>
+  <div class="sidebar-bottom"><span class="local-mark">● Local to your computer</span><p>A little overview.<br>More room for your work.</p><span class="version">Adem / version 1.0</span></div>
+</aside>
+<main id="main" tabindex="-1">
+  <header id="overzicht"><div class="breadcrumb">MY COMPUTER <span aria-hidden="true">/</span> OVERVIEW</div><div class="connection" id="connection">Connecting…</div></header>
+  <section class="page-heading"><div><p class="eyebrow" id="hostname">LINUX WORKSTATION</p><h1>Give your computer room to breathe.</h1><p>See what is running. Close what you do not need right now.</p></div><button class="secondary" id="refresh"><span aria-hidden="true">↻</span> Refresh</button></section>
+  <div id="error" role="alert" hidden></div>
+  <section class="hero" aria-labelledby="hero-title"><div class="hero-content"><div class="hero-label"><span aria-hidden="true">✦</span> ROOM TO FOCUS</div><h2 id="hero-title">You choose what stays open.</h2><p id="hero-description">Reading your active apps and current memory use.</p><a class="primary" href="#apps">View your apps <span aria-hidden="true">↗</span></a><div class="hero-foot">Review first, then confirm.</div></div><div class="memory-orbit"><div class="orbit-inner"><span class="orbit-caption">RAM AVAILABLE</span><strong id="available">—</strong><span id="total-memory">Reading memory</span></div></div></section>
+  <section class="metrics" aria-label="Actuele systeemmetingen">
+    <article class="metric"><div class="metric-heading">Processor <span aria-hidden="true">⌁</span></div><div class="metric-number" id="cpu">—</div><progress id="cpu-bar" max="100" value="0" aria-label="CPU usage"></progress><p id="cpu-detail">Preparing first measurement</p></article>
+    <article class="metric"><div class="metric-heading">Memory <span aria-hidden="true">▥</span></div><div class="metric-number" id="memory">—</div><progress id="memory-bar" max="100" value="0" aria-label="Memory usage"></progress><p id="memory-detail">Waiting for Linux</p></article>
+    <article class="metric"><div class="metric-heading">Storage <span aria-hidden="true">▱</span></div><div class="metric-number" id="disk">—</div><progress id="disk-bar" max="100" value="0" aria-label="Storage usage"></progress><p id="disk-detail">Your home filesystem</p></article>
+    <article class="metric"><div class="metric-heading">Session <span aria-hidden="true">◷</span></div><div class="metric-number" id="uptime">—</div><div class="session-line">Since last boot</div><p id="process-count">Counting processes</p></article>
+  </section>
+  <section class="apps-section" id="apps" aria-labelledby="apps-title"><div class="section-heading"><div><p class="eyebrow">MAKE ROOM</p><h2 id="apps-title">Apps & processes <span id="app-count" class="count">0</span></h2><p>From your Linux user. Sorted by RAM at the first measurement.</p></div><label class="pause-control"><input id="auto-refresh" type="checkbox" checked> Live refresh</label></div>
+    <div class="toolbar"><div class="search-field"><label for="search">Search an app or process</label><input id="search" type="search" placeholder="For example Spotify…" autocomplete="off"></div><div class="filter-field"><label for="filter">Show</label><select id="filter"><option value="all">All apps & processes</option><option value="closable">Closable apps only</option><option value="protected">Protected only</option></select></div><button id="select-all" class="secondary">Select closable apps</button></div>
+    <div class="list-head" aria-hidden="true"><span>APP / PROCESS</span><span>RAM</span><span>CPU¹</span><span>STATUS</span></div>
+    <ul id="app-list" class="app-list" tabindex="0" aria-label="Running apps and processes"></ul><p class="empty" id="empty">Loading apps…</p>
+    <div class="selection-bar"><div><strong id="selection-count">No apps selected</strong><span id="selection-memory">Select apps you are not using right now.</span></div><button id="review" class="primary" disabled>Review & close selection <span aria-hidden="true">→</span></button></div>
+    <div class="notice" id="notice" role="status" aria-live="polite"></div>
+    <p class="measurement-note">RAM per app is an estimate (RSS); shared memory may be counted twice. ¹ CPU per app: 100% = one processor core. Closing an app does not guarantee a speed improvement.</p>
+  </section>
+  <section class="protection" id="bescherming" aria-labelledby="protection-title"><div class="shield" aria-hidden="true">◇</div><div><h2 id="protection-title">Your workspace stays reachable.</h2><p>Browsers, Codex, password managers, recording software and unknown system processes are protected. Adem closes only recognised apps after your confirmation and never deletes files.</p><p>Another Linux computer? Install Adem there too; each computer has its own local dashboard.</p></div><span class="protected-badge">Protection active</span></section>
+  <footer><span>Adem runs on 127.0.0.1 · No cloud connection</span><span id="updated">No measurement yet</span></footer>
+</main>
+<dialog id="confirm-dialog" aria-labelledby="dialog-title" aria-describedby="dialog-description"><div class="dialog-symbol" aria-hidden="true">↘</div><p class="eyebrow">REVIEW FIRST</p><h2 id="dialog-title">Close these apps?</h2><p id="dialog-description">Save your work first. Closing can lose unsaved work; an app may not show a save prompt.</p><ul id="plan-apps"></ul><p id="plan-summary"></p><p class="dialog-note">We send a graceful stop request, without forced termination. Apps may remain active. Your selection is valid for 60 seconds.</p><div id="dialog-error" role="alert"></div><div class="dialog-actions"><button id="cancel" class="secondary" autofocus>Back to overview</button><button id="confirm" class="danger">Yes, close these apps</button></div></dialog>
+</body></html>
