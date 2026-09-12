@@ -13,6 +13,8 @@ The systemd timer writes it every 15 seconds with mode `0600`. The write is atom
 
 CatchMe should treat the file as untrusted, local evidence. It may answer “which process groups are expensive?” from the latest `capturedAt`; it must not infer focus, productivity, cause, duration or diagnosis. It must not use this file to signal processes. Use Adem’s review dialog for that.
 
+On this workstation the local CatchMe MCP agent also exposes the same snapshot as the read-only `adem_processes` tool. Its live protocol check passed `initialize`, `tools/list` and `tools/call`. The tool is intentionally separate from CatchMe’s screen and activity tools. The open-source export contract works without that optional agent adapter, so other Linux users can consume the JSON from their own local integration.
+
 To inspect it manually:
 
 ```bash
